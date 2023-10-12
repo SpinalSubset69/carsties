@@ -1,11 +1,27 @@
 services:
+
+  # PostgreSQL Service
   postgres:
     image: postgres
     environment:
-      - POSTGRES_PASSWORD=Resumiendo69%
+      - POSTGRES_PASSWORD=Resumiendo69
     ports:
       - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
+  
+  # MongoDB Service
+  mongodb:
+    image: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Resumiendo69
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodata:/var/lib/mongodb/data      
+
+# Volumes      
 volumes:
   pgdata:
+  mongodata:

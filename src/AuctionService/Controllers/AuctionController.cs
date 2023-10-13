@@ -3,6 +3,8 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,11 +16,13 @@ public class AuctionController : ControllerBase
 {
     private readonly AuctionDbContext _dbContext;
     private readonly IMapper _mapper;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public AuctionController(AuctionDbContext dbContext, IMapper mapper)
+    public AuctionController(AuctionDbContext dbContext, IMapper mapper, IPublishEndpoint publishEndpoint)
     {
         _dbContext = dbContext;
         _mapper = mapper;
+        _publishEndpoint = publishEndpoint;
     }
 
     [HttpGet]
@@ -55,9 +59,12 @@ public class AuctionController : ControllerBase
 
         _dbContext.Auctions.Add(auction);
 
-        var result = await _dbContext.SaveChangesAsync() > 0;
+        var newAuction = _mapper.Map<AuctionDto>(auction);
+        await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
 
-        if (!result) return BadRequest("Could not save changes to the DB");
+        var result = await _dbContext.SaveChangesAsync() > 0;        
+
+        if (!result) return BadRequest("Could not save changes to the DB");        
 
         return CreatedAtAction(nameof(GetAuctionById),
             new { auction.Id }, _mapper.Map<AuctionDto>(auction));
@@ -79,6 +86,10 @@ public class AuctionController : ControllerBase
         auction.Item.Mileage = updateAuctionDto.Mileage ?? auction.Item.Mileage;
         auction.Item.Year = updateAuctionDto.Year ?? auction.Item.Year;
 
+        var  updateDataToConsume = _mapper.Map<AuctionUpdated>(auction.Item);        
+        updateDataToConsume.Id = id.ToString();
+        await _publishEndpoint.Publish(updateDataToConsume);
+
         var result = await _dbContext.SaveChangesAsync() > 0;
 
         if (result) return Ok();
@@ -94,6 +105,8 @@ public class AuctionController : ControllerBase
         if (auction is null) return NotFound();
 
         // TODO: check seller is equals to username
+
+        await _publishEndpoint.Publish(new AuctionDeleted { Id = id.ToString() });
 
         _dbContext.Auctions.Remove(auction);
 

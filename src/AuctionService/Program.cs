@@ -28,6 +28,7 @@ builder.Services.AddMassTransit(x =>
 
     // Consumers configuration
     x.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
+
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction", false));
 
     // RabbitMQ configuration

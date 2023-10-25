@@ -18,7 +18,7 @@ public class AuctionCreatedFaultConsumer : IConsumer<Fault<AuctionCreated>>
         }
         else
         {
-            Console.WriteLine("Not an argument exception - update error dashboard somewhere");
-        }
+            Console.WriteLine("Not an argument exception - update error dashboard somewhere");            
+        }        
     }
 }
